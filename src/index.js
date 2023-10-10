@@ -1,7 +1,9 @@
 let postcss = require("postcss");
 const fs = require("node:fs");
 const path = require("node:path");
+// PostCSS plugins
 const valueExtractor = require("postcss-extract-value");
+const postcssImport = require("postcss-import");
 
 const THEME_NAME = "material";
 const OUTPUT_FOLDER = "build";
@@ -30,6 +32,7 @@ fs.readdirSync(materialFolder).forEach((file) => {
   // get the file path
   const filePath = path.resolve(materialFolder, file);
 
+  fs.mkdirSync(path.resolve(OUTPUT_FOLDER), { recursive: true });
   if (!filePath.includes("main.css")) {
     // read all files in the folder
     fs.readdirSync(filePath).forEach((cssFile) => {
@@ -37,14 +40,21 @@ fs.readdirSync(materialFolder).forEach((file) => {
       const css = fs.readFileSync(cssPath, "utf8");
       // process the file
       postcss()
-        .use(valueExtractor(pluginConfig))
+        .use(postcssImport())
         .process(css, { from: cssPath })
         .then((result) => {
           if (result.css) {
-            // create the folder
-            fs.mkdirSync(path.resolve(OUTPUT_FOLDER, file), { recursive: true });
-            // create the file
-            fs.writeFileSync(path.resolve(OUTPUT_FOLDER, file, cssFile), result.css);
+            postcss()
+              .use(valueExtractor(pluginConfig))
+              .process(result.css, { from: cssPath })
+              .then((resultCss) => {
+                if (resultCss.css) {
+                  // create the folder
+                  fs.mkdirSync(path.resolve(OUTPUT_FOLDER, file), { recursive: true });
+                  // create the file
+                  fs.writeFileSync(path.resolve(OUTPUT_FOLDER, file, cssFile), resultCss.css);
+                }
+              });
           }
         });
     });
