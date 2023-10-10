@@ -3,8 +3,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const valueExtractor = require("postcss-extract-value");
 
-const materialFolder = path.resolve(__dirname, "./css/material/individual");
-const folderName = "build";
+const THEME_NAME = "material";
+const OUTPUT_FOLDER = "build";
+
+const materialFolder = path.resolve(__dirname, `./css/${THEME_NAME}`);
 
 const filterByProps = [
   "color",
@@ -40,14 +42,14 @@ fs.readdirSync(materialFolder).forEach((file) => {
         .then((result) => {
           if (result.css) {
             // create the folder
-            fs.mkdirSync(path.resolve(folderName, file), { recursive: true });
+            fs.mkdirSync(path.resolve(OUTPUT_FOLDER, file), { recursive: true });
             // create the file
-            fs.writeFileSync(path.resolve(folderName, file, cssFile), result.css);
+            fs.writeFileSync(path.resolve(OUTPUT_FOLDER, file, cssFile), result.css);
           }
         });
     });
   } else {
-    fs.copyFileSync(filePath, path.resolve("build", file));
+    fs.copyFileSync(filePath, path.resolve(OUTPUT_FOLDER, file));
   }
 });
 
