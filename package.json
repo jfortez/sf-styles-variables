@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --watch src/",
+    "build": "node src/build.js",
     "postcss:config": "postcss src/**/*.css --dir build --no-map",
     "postcss:cli": "postcss src/**/*.css --use postcss-extract-value --dir build --no-map"
   },
@@ -15,9 +16,40 @@
     "postcss": "^8.4.31",
     "postcss-cli": "^10.1.0",
     "postcss-extract-value": "^0.5.1",
-    "postcss-import": "^15.1.0"
+    "postcss-import": "^15.1.0",
+    "postcss-import-url": "^7.2.0"
   },
   "dependencies": {
-    "@syncfusion/ej2-react-buttons": "^23.1.39"
+    "@syncfusion/ej2-barcode-generator": "^23.1.36",
+    "@syncfusion/ej2-buttons": "^23.1.39",
+    "@syncfusion/ej2-calendars": "^23.1.40",
+    "@syncfusion/ej2-charts": "^23.1.40",
+    "@syncfusion/ej2-circulargauge": "^23.1.38",
+    "@syncfusion/ej2-diagrams": "^23.1.40",
+    "@syncfusion/ej2-documenteditor": "^23.1.40",
+    "@syncfusion/ej2-dropdowns": "^23.1.40",
+    "@syncfusion/ej2-filemanager": "^23.1.40",
+    "@syncfusion/ej2-gantt": "^23.1.39",
+    "@syncfusion/ej2-grids": "^23.1.40",
+    "@syncfusion/ej2-heatmap": "^23.1.36",
+    "@syncfusion/ej2-inplace-editor": "^23.1.40",
+    "@syncfusion/ej2-inputs": "^23.1.40",
+    "@syncfusion/ej2-kanban": "^23.1.36",
+    "@syncfusion/ej2-layouts": "^23.1.36",
+    "@syncfusion/ej2-lists": "^23.1.36",
+    "@syncfusion/ej2-maps": "^23.1.40",
+    "@syncfusion/ej2-navigations": "^23.1.40",
+    "@syncfusion/ej2-notifications": "^23.1.40",
+    "@syncfusion/ej2-pdfviewer": "^23.1.40",
+    "@syncfusion/ej2-pivotview": "^23.1.38",
+    "@syncfusion/ej2-popups": "^23.1.38",
+    "@syncfusion/ej2-progressbar": "^23.1.38",
+    "@syncfusion/ej2-querybuilder": "^23.1.39",
+    "@syncfusion/ej2-richtexteditor": "^23.1.40",
+    "@syncfusion/ej2-schedule": "^23.1.40",
+    "@syncfusion/ej2-splitbuttons": "^23.1.36",
+    "@syncfusion/ej2-spreadsheet": "^23.1.40",
+    "@syncfusion/ej2-treegrid": "^23.1.39",
+    "@syncfusion/ej2-treemap": "^23.1.36"
   }
 }
