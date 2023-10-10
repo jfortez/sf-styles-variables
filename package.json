@@ -1,0 +1,23 @@
+{
+  "name": "custom-css",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch src/",
+    "postcss:config": "postcss src/**/*.css --dir build --no-map",
+    "postcss:cli": "postcss src/**/*.css --use postcss-extract-value --dir build --no-map"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "postcss": "^8.4.31",
+    "postcss-cli": "^10.1.0",
+    "postcss-extract-value": "^0.5.1",
+    "postcss-import": "^15.1.0"
+  },
+  "dependencies": {
+    "@syncfusion/ej2-react-buttons": "^23.1.39"
+  }
+}
