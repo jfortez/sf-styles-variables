@@ -2,6 +2,7 @@ const postcss = require('postcss')
 const fs = require('node:fs')
 const path = require('node:path')
 const { OUTPUT, THEME } = require('./globals')
+const parseVariables = require('./parseVariables')
 
 // PostCSS plugins
 const valueExtractor = require('postcss-extract-value')
@@ -17,13 +18,13 @@ const filterByProps = [
   'border-right-color',
   'border-bottom-color',
   'border-left-color',
-  'box-shadow',
-  'border',
+  // 'box-shadow',
+  // 'border',
   'border-left',
   'border-right',
   'border-top',
-  'border-bottom',
-  'background'
+  'border-bottom'
+  // 'background'
 ]
 const templateVariableName = `sf-${THEME}-[propertyName]`
 
@@ -57,20 +58,20 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
                     recursive: true
                   })
                   // create the file
+                  const css = `/* <== ${fileGroup}/${file}/${cssFile} ==> */\n${variablesResult.css}`
+
                   fs.writeFileSync(
                     path.resolve(OUTPUT, fileGroup, file, cssFile),
-                    variablesResult.css
+                    css
                   )
                 } else {
                   // create the folder
                   fs.mkdirSync(path.resolve(OUTPUT, file), {
                     recursive: true
                   })
+                  const css = `/* <== ${file}/${cssFile} ==> */\n${variablesResult.css}`
                   // create the file
-                  fs.writeFileSync(
-                    path.resolve(OUTPUT, file, cssFile),
-                    variablesResult.css
-                  )
+                  fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
                 }
               }
             })
@@ -79,10 +80,8 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
             recursive: true
           })
           // create the file
-          fs.writeFileSync(
-            path.resolve(OUTPUT, file, cssFile),
-            importResult.css
-          )
+          const css = `/* <== ${file}/${cssFile} ==> */\n${importResult.css}`
+          fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
         }
       }
     })
@@ -118,4 +117,27 @@ fs.readdirSync(folderTemplate).forEach((file) => {
       fs.copyFileSync(filePath, path.resolve(OUTPUT, file))
     }
   }
+})
+
+const mainFile = path.resolve(OUTPUT, 'main.css')
+const mainCss = fs.readFileSync(mainFile, 'utf8')
+
+parseVariables(mainCss, { from: mainFile }).then((result) => {
+  const { globalCss, resultCss } = result
+  const output = path.resolve(OUTPUT, 'variables.css')
+  let imports = ''
+
+  fs.writeFileSync(output, globalCss)
+
+  imports += '@import "./variables.css";\n\n'
+
+  Object.keys(resultCss).forEach((key) => {
+    const file = path.resolve(OUTPUT, `${key}`)
+
+    imports += `@import "./${key}";\n`
+
+    fs.writeFileSync(file, resultCss[key])
+  })
+  // // create main file
+  fs.writeFileSync(mainFile, imports)
 })

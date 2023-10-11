@@ -93,7 +93,7 @@ const parseVariables = (cssContent, processOptions) => {
 
         for (let i = 0; i < keys.length; i++) {
           const key = keys[i]
-          const file = files.find((i) => i.includes(key))
+          const file = files.find((i) => i.includes(key.split('/').at(-1)))
           const variablesToReplace = replacedVariables[key]
           if (file) {
             const filePath = path.resolve(file)

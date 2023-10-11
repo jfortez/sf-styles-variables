@@ -45,6 +45,7 @@ fs.readdirSync(syncfusionPath).forEach((component) => {
             .relative(folderStyle, packageStyle)
             .replace(/\\/g, '/')
           const css = `@import "${relativePath}";\n`
+          // const css = `/* <== ${COMPONENT_NAME}/${COMPONENT_NAME}.css ==> */\n@import "${relativePath}";\n`
 
           const importCss = `@import "./${COMPONENT_NAME}/${COMPONENT_NAME}.css";\n`
           mainImports += importCss
@@ -84,6 +85,7 @@ fs.readdirSync(syncfusionPath).forEach((component) => {
               `${styleFile}.css`
             )
             const css = `@import "${relativePath}";\n`
+            // const css = `/* <== ${COMPONENT_NAME}/${styleFile}/${styleFile}.css ==> */\n@import "${relativePath}";\n`
             const importCss = `@import "./${COMPONENT_NAME}/${styleFile}/${styleFile}.css";\n`
             mainImports += importCss
             fs.appendFileSync(cssFileName, css)
