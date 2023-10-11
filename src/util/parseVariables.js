@@ -102,10 +102,11 @@ const parseVariables = (cssContent, processOptions) => {
             const rootVariableContent = toRootVariables(variablesToReplace)
 
             const regex = /:root\s*{([\s\S]*?)}/g
-            const newCss = css.replace(
-              regex,
-              `:root {\n${rootVariableContent}\n}`
-            )
+            let newCss = css
+
+            if (Object.keys(variablesToReplace).length > 0) {
+              newCss = css.replace(regex, `:root {\n${rootVariableContent}\n}`)
+            }
 
             resultCss[key] = newCss
           }

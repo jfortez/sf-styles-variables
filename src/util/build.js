@@ -42,47 +42,52 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
     .use(postcssImport())
     .process(css, { from: cssPath })
     .then((importResult) => {
-      if (importResult.css) {
-        if (!folderExceptions.includes(file)) {
-          postcss()
-            .use(valueExtractor(pluginConfig))
-            .process(importResult.css, { from: cssPath })
-            .then((variablesResult) => {
-              if (variablesResult.css) {
-                if (fileGroup) {
-                  // create the folder
-                  fs.mkdirSync(path.resolve(OUTPUT, fileGroup), {
-                    recursive: true
-                  })
-                  fs.mkdirSync(path.resolve(OUTPUT, fileGroup, file), {
-                    recursive: true
-                  })
-                  // create the file
-                  const css = `/* <== ${fileGroup}/${file}/${cssFile} ==> */\n${variablesResult.css}`
+      if (!folderExceptions.includes(file)) {
+        postcss()
+          .use(valueExtractor(pluginConfig))
+          .process(importResult.css, { from: cssPath })
+          .then((variablesResult) => {
+            if (variablesResult.css) {
+              if (fileGroup) {
+                // create the folder
+                fs.mkdirSync(path.resolve(OUTPUT, fileGroup), {
+                  recursive: true
+                })
+                fs.mkdirSync(path.resolve(OUTPUT, fileGroup, file), {
+                  recursive: true
+                })
+                // create the file
+                let css = `/* <== ${fileGroup}/${file}/${cssFile} ==> */\n${variablesResult.css}`
 
-                  fs.writeFileSync(
-                    path.resolve(OUTPUT, fileGroup, file, cssFile),
-                    css
-                  )
-                } else {
-                  // create the folder
-                  fs.mkdirSync(path.resolve(OUTPUT, file), {
-                    recursive: true
-                  })
-                  const css = `/* <== ${file}/${cssFile} ==> */\n${variablesResult.css}`
-                  // create the file
-                  fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
+                // detect if root is undefined or :root{}
+                const regex = /:root\s*{\s*}\s*/
+                const undefinedRoot = regex.test(css)
+                if (undefinedRoot) {
+                  // remove the :root{}
+                  css = css.replace(regex, '')
                 }
+                fs.writeFileSync(
+                  path.resolve(OUTPUT, fileGroup, file, cssFile),
+                  css
+                )
+              } else {
+                // create the folder
+                fs.mkdirSync(path.resolve(OUTPUT, file), {
+                  recursive: true
+                })
+                const css = `/* <== ${file}/${cssFile} ==> */\n${variablesResult.css}`
+                // create the file
+                fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
               }
-            })
-        } else {
-          fs.mkdirSync(path.resolve(OUTPUT, file), {
-            recursive: true
+            }
           })
-          // create the file
-          const css = `/* <== ${file}/${cssFile} ==> */\n${importResult.css}`
-          fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
-        }
+      } else {
+        fs.mkdirSync(path.resolve(OUTPUT, file), {
+          recursive: true
+        })
+        // create the file
+        const css = `/* <== ${file}/${cssFile} ==> */\n${importResult.css}`
+        fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
       }
     })
 }
