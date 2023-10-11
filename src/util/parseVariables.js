@@ -14,7 +14,12 @@ function transformVariables(variables) {
       const value = sourceVariables[variable]
 
       if (!variableMap.has(value)) {
-        const newVariable = `--var-${variableMap.size + 1}`
+        const variableName = variable
+          .replace('--sf-material--', '')
+          .replace(/-[0-9]+$/, '')
+
+        // get last size by variableName
+        const newVariable = `--${variableName}-${variableMap.size + 1}`
         variableMap.set(value, newVariable)
         newVariables[newVariable] = value
       }
@@ -32,6 +37,16 @@ function transformVariables(variables) {
       replacedVariables[sourceFile][variable] = `var(${newVariable})`
     }
   }
+
+  // order variables by name
+
+  Object.keys(newVariables)
+    .sort()
+    .forEach((key) => {
+      const value = newVariables[key]
+      delete newVariables[key]
+      newVariables[key] = value
+    })
 
   return {
     newVariables,
@@ -69,13 +84,15 @@ const parseVariables = (cssContent, processOptions) => {
           const [, variableName] = input[i].match(
             /\/\*\s<==\s(.*?)\s==>\s\*\//s
           )
-          const [, variableValues] = input[i].match(/:root\s*{([\s\S]*?)}/s)
+          const [, rootVariables] = input[i].match(/:root\s*{([\s\S]*?)}/s)
           // eliminar comentarios
-          const values = variableValues.replace(/\/\*[\s\S]*?\*\//g, '')
+          const values = rootVariables.replace(/\/\*[\s\S]*?\*\//g, '')
 
           const inputVariables = {}
           values.split('\n').forEach((line) => {
+            // TODO: fix bug when background property has a value with a url("..."), the result is incomplete.
             const match = line.match(/--([\w-]+):\s*([^;]+)/)
+            console.log(line)
             if (match) {
               const [, name, value] = match
               inputVariables[`--${name}`] = value.trim()
@@ -84,6 +101,7 @@ const parseVariables = (cssContent, processOptions) => {
           variables[variableName] = inputVariables
         }
 
+        return
         const { newVariables, replacedVariables } =
           transformVariables(variables)
 

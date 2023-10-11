@@ -1,7 +1,7 @@
 const postcss = require('postcss')
 const fs = require('node:fs')
 const path = require('node:path')
-const { OUTPUT, THEME } = require('./globals')
+const { OUTPUT, THEME, CSS_PROPERTIES } = require('./globals')
 const parseVariables = require('./parseVariables')
 
 // PostCSS plugins
@@ -12,29 +12,13 @@ const folderTemplate = path.resolve('styles')
 
 const output = path.resolve(OUTPUT)
 
-const filterByProps = [
-  'color',
-  'background-color',
-  'border-color',
-  'border-top-color',
-  'border-right-color',
-  'border-bottom-color',
-  'border-left-color',
-  'box-shadow',
-  'border',
-  'border-left',
-  'border-right',
-  'border-top',
-  'border-bottom'
-  // 'background'
-]
 const templateVariableName = `sf-${THEME}-[propertyName]`
 
 const folderExceptions = ['icons']
 
 const pluginConfig = {
   templateVariableName,
-  filterByProps
+  filterByProps: CSS_PROPERTIES
 }
 
 const parseCss = (cssPath, file, cssFile, fileGroup) => {

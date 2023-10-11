@@ -1,12 +1,13 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { FOLDER_TEMPLATE, OUTPUT } = require('./util/globals')
+const createTemplate = require('./util/template')
 const build = require('./util/build')
 
 const main = () => {
   const template = path.resolve(FOLDER_TEMPLATE)
   if (!fs.existsSync(template)) {
-    require('./util/template')
+    createTemplate()
   }
   const output = path.resolve(OUTPUT)
   // if (!fs.existsSync(output)) {
