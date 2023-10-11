@@ -13,11 +13,21 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "eslint-config-standard": "^17.1.0",
     "postcss": "^8.4.31",
     "postcss-cli": "^10.1.0",
     "postcss-extract-value": "^0.5.1",
     "postcss-import": "^15.1.0",
-    "postcss-import-url": "^7.2.0"
+    "postcss-import-url": "^7.2.0",
+    "standard": "^17.1.0"
+  },
+  "eslintConfig": {
+    "extends": "standard"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "semi": false,
+    "trailingComma": "none"
   },
   "dependencies": {
     "@syncfusion/ej2-barcode-generator": "^23.1.36",
