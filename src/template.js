@@ -36,11 +36,43 @@ fs.readdirSync(syncfusionPath).forEach((component) => {
 
       fs.mkdirSync(componentFolder, { recursive: true })
 
-      fs.readdirSync(styleFolderPath).forEach(async (styleFile) => {
-        // node_modules/@syncfusion/ej2-[component]/styles/[styleFile | styleFolder]
-        const isFolder = !styleFile.match(/\.[a-z]+$/i)
-        if (isFolder) {
-          if (!exclude.includes(styleFile)) {
+      if (COMPONENT_NAME === 'base' || COMPONENT_NAME === 'icons') {
+        const file = path.resolve(ROOT, COMPONENT_NAME, `${COMPONENT_NAME}.css`)
+
+        const shouldAppend =
+          !fs.existsSync(file) &&
+          (COMPONENT_NAME === 'base' || COMPONENT_NAME === 'icons')
+
+        if (shouldAppend) {
+          const packageStyle = path.resolve(styleFolderPath, `${THEME}.css`)
+          const folderStyle = path.resolve(ROOT, COMPONENT_NAME)
+
+          const relativePath = path
+            .relative(folderStyle, packageStyle)
+            .replace(/\\/g, '/')
+          const css = `@import "${relativePath}";\n`
+
+          const importCss = `@import "./${COMPONENT_NAME}/${COMPONENT_NAME}.css";\n`
+          mainImports += importCss
+
+          fs.appendFileSync(file, css)
+        }
+      } else {
+        const allCss = path.resolve(styleFolderPath, `${THEME}.css`)
+        if (fs.existsSync(allCss)) {
+          const relativeImport = path
+            .relative(componentFolder, allCss)
+            .replace(/\\/g, '/')
+          const css = `@import "${relativeImport}";\n`
+          const _all = path.resolve(componentFolder, 'all.css')
+          fs.appendFileSync(_all, css)
+        }
+        // const allCss = path.resolve(styleFolderPath)
+
+        fs.readdirSync(styleFolderPath).forEach(async (styleFile) => {
+          // node_modules/@syncfusion/ej2-[component]/styles/[styleFile | styleFolder]
+          const isFolder = !styleFile.match(/\.[a-z]+$/i)
+          if (isFolder && !exclude.includes(styleFile)) {
             const folderStyle = path.resolve(ROOT, COMPONENT_NAME, styleFile)
 
             fs.mkdirSync(folderStyle, { recursive: true })
@@ -66,33 +98,8 @@ fs.readdirSync(syncfusionPath).forEach((component) => {
 
             fs.appendFileSync(cssFileName, css)
           }
-        } else {
-          const file = path.resolve(
-            ROOT,
-            COMPONENT_NAME,
-            `${COMPONENT_NAME}.css`
-          )
-
-          const shouldAppend =
-            !fs.existsSync(file) &&
-            (COMPONENT_NAME === 'base' || COMPONENT_NAME === 'icons')
-
-          if (shouldAppend) {
-            const packageStyle = path.resolve(styleFolderPath, `${THEME}.css`)
-            const folderStyle = path.resolve(ROOT, COMPONENT_NAME)
-
-            const relativePath = path
-              .relative(folderStyle, packageStyle)
-              .replace(/\\/g, '/')
-            const css = `@import "${relativePath}";\n`
-
-            const importCss = `@import "./${COMPONENT_NAME}/${COMPONENT_NAME}.css";\n`
-            mainImports += importCss
-
-            fs.appendFileSync(file, css)
-          }
-        }
-      })
+        })
+      }
     }
   })
 })
