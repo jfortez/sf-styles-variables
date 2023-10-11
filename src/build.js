@@ -29,6 +29,8 @@ const filterByProps = [
 ]
 const templateVariableName = `sf-${THEME_NAME}-[propertyName]`
 
+const folderExceptions = ['icons']
+
 const pluginConfig = {
   templateVariableName,
   filterByProps
@@ -40,39 +42,50 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
   postcss()
     .use(postcssImport())
     .process(css, { from: cssPath })
-    .then((result) => {
-      if (result.css) {
-        postcss()
-          .use(valueExtractor(pluginConfig))
-          .process(result.css, { from: cssPath })
-          .then((resultCss) => {
-            if (resultCss.css) {
-              if (fileGroup) {
-                // create the folder
-                fs.mkdirSync(path.resolve(OUTPUT_FOLDER, fileGroup), {
-                  recursive: true
-                })
-                fs.mkdirSync(path.resolve(OUTPUT_FOLDER, fileGroup, file), {
-                  recursive: true
-                })
-                // create the file
-                fs.writeFileSync(
-                  path.resolve(OUTPUT_FOLDER, fileGroup, file, cssFile),
-                  resultCss.css
-                )
-              } else {
-                // create the folder
-                fs.mkdirSync(path.resolve(OUTPUT_FOLDER, file), {
-                  recursive: true
-                })
-                // create the file
-                fs.writeFileSync(
-                  path.resolve(OUTPUT_FOLDER, file, cssFile),
-                  resultCss.css
-                )
+    .then((importResult) => {
+      if (importResult.css) {
+        if (!folderExceptions.includes(file)) {
+          postcss()
+            .use(valueExtractor(pluginConfig))
+            .process(importResult.css, { from: cssPath })
+            .then((variablesResult) => {
+              if (variablesResult.css) {
+                if (fileGroup) {
+                  // create the folder
+                  fs.mkdirSync(path.resolve(OUTPUT_FOLDER, fileGroup), {
+                    recursive: true
+                  })
+                  fs.mkdirSync(path.resolve(OUTPUT_FOLDER, fileGroup, file), {
+                    recursive: true
+                  })
+                  // create the file
+                  fs.writeFileSync(
+                    path.resolve(OUTPUT_FOLDER, fileGroup, file, cssFile),
+                    variablesResult.css
+                  )
+                } else {
+                  // create the folder
+                  fs.mkdirSync(path.resolve(OUTPUT_FOLDER, file), {
+                    recursive: true
+                  })
+                  // create the file
+                  fs.writeFileSync(
+                    path.resolve(OUTPUT_FOLDER, file, cssFile),
+                    variablesResult.css
+                  )
+                }
               }
-            }
+            })
+        } else {
+          fs.mkdirSync(path.resolve(OUTPUT_FOLDER, file), {
+            recursive: true
           })
+          // create the file
+          fs.writeFileSync(
+            path.resolve(OUTPUT_FOLDER, file, cssFile),
+            importResult.css
+          )
+        }
       }
     })
 }
