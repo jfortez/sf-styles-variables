@@ -22,7 +22,10 @@
     "standard": "^17.1.0"
   },
   "eslintConfig": {
-    "extends": "standard"
+    "extends": "standard",
+    "rules": {
+      "space-before-function-paren": "off"
+    }
   },
   "prettier": {
     "singleQuote": true,

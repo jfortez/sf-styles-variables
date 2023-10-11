@@ -1,13 +1,11 @@
 const postcss = require('postcss')
 const fs = require('node:fs')
 const path = require('node:path')
+const { OUTPUT, THEME } = require('./globals')
 
 // PostCSS plugins
 const valueExtractor = require('postcss-extract-value')
 const postcssImport = require('postcss-import')
-
-const THEME_NAME = 'material'
-const OUTPUT_FOLDER = 'build'
 
 const folderTemplate = path.resolve('styles')
 
@@ -27,7 +25,7 @@ const filterByProps = [
   'border-bottom',
   'background'
 ]
-const templateVariableName = `sf-${THEME_NAME}-[propertyName]`
+const templateVariableName = `sf-${THEME}-[propertyName]`
 
 const folderExceptions = ['icons']
 
@@ -52,37 +50,37 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
               if (variablesResult.css) {
                 if (fileGroup) {
                   // create the folder
-                  fs.mkdirSync(path.resolve(OUTPUT_FOLDER, fileGroup), {
+                  fs.mkdirSync(path.resolve(OUTPUT, fileGroup), {
                     recursive: true
                   })
-                  fs.mkdirSync(path.resolve(OUTPUT_FOLDER, fileGroup, file), {
+                  fs.mkdirSync(path.resolve(OUTPUT, fileGroup, file), {
                     recursive: true
                   })
                   // create the file
                   fs.writeFileSync(
-                    path.resolve(OUTPUT_FOLDER, fileGroup, file, cssFile),
+                    path.resolve(OUTPUT, fileGroup, file, cssFile),
                     variablesResult.css
                   )
                 } else {
                   // create the folder
-                  fs.mkdirSync(path.resolve(OUTPUT_FOLDER, file), {
+                  fs.mkdirSync(path.resolve(OUTPUT, file), {
                     recursive: true
                   })
                   // create the file
                   fs.writeFileSync(
-                    path.resolve(OUTPUT_FOLDER, file, cssFile),
+                    path.resolve(OUTPUT, file, cssFile),
                     variablesResult.css
                   )
                 }
               }
             })
         } else {
-          fs.mkdirSync(path.resolve(OUTPUT_FOLDER, file), {
+          fs.mkdirSync(path.resolve(OUTPUT, file), {
             recursive: true
           })
           // create the file
           fs.writeFileSync(
-            path.resolve(OUTPUT_FOLDER, file, cssFile),
+            path.resolve(OUTPUT, file, cssFile),
             importResult.css
           )
         }
@@ -90,7 +88,7 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
     })
 }
 
-const output = path.resolve(OUTPUT_FOLDER)
+const output = path.resolve(OUTPUT)
 
 fs.mkdirSync(output, { recursive: true })
 
@@ -117,7 +115,7 @@ fs.readdirSync(folderTemplate).forEach((file) => {
     })
   } else {
     if (filePath.includes('index.css') || filePath.includes('main.css')) {
-      fs.copyFileSync(filePath, path.resolve(OUTPUT_FOLDER, file))
+      fs.copyFileSync(filePath, path.resolve(OUTPUT, file))
     }
   }
 })

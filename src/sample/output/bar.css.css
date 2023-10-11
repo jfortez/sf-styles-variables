@@ -1,0 +1,28 @@
+/* <== bar.css ==> */
+:root {
+  --var-1: var(--var-1);
+  --var-2: var(--var-6);
+  --var-3: var(--var-3);
+  --var-4: var(--var-7);
+  --var-5: var(--var-8);
+}
+
+.bar-1 {
+  color: var(--var-1);
+}
+
+.bar-2 {
+  color: var(--var-2);
+}
+
+.bar-3 {
+  color: var(--var-3);
+}
+
+.bar-4 {
+  color: var(--var-4);
+}
+
+.bar-5 {
+  color: var(--var-5);
+}

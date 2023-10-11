@@ -1,0 +1,28 @@
+/* <== foo.css ==> */
+:root {
+  --var-6: red; /* <== this is repeated with ./bar.css --var-1 */
+  --var-7: purple;
+  --var-8: green; /* <== this is repeated with ./bar.css --var-3 */
+  --var-9: snow;
+  --var-10: salmon;
+}
+
+.foo-6 {
+  color: var(--var-6);
+}
+
+.foo-7 {
+  color: var(--var-7);
+}
+
+.foo-8 {
+  color: var(--var-8);
+}
+
+.foo-9 {
+  color: var(--var-9);
+}
+
+.foo-10 {
+  color: var(--var-10);
+}

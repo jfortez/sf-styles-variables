@@ -1,0 +1,28 @@
+/* <== foo.css ==> */
+:root {
+  --var-6: var(--var-1);
+  --var-7: var(--var-2);
+  --var-8: var(--var-3);
+  --var-9: var(--var-4);
+  --var-10: var(--var-5);
+}
+
+.foo-6 {
+  color: var(--var-6);
+}
+
+.foo-7 {
+  color: var(--var-7);
+}
+
+.foo-8 {
+  color: var(--var-8);
+}
+
+.foo-9 {
+  color: var(--var-9);
+}
+
+.foo-10 {
+  color: var(--var-10);
+}

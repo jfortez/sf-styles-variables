@@ -2,15 +2,13 @@ const fs = require('node:fs')
 
 const path = require('node:path')
 
+const { FOLDER_TEMPLATE, THEME } = require('./globals')
+
 const syncfusionPath = path.resolve('node_modules/@syncfusion')
 
 const exclude = ['animation', 'common', 'definition', 'offline-theme']
 
-const FOLDER_NAME = 'styles'
-
-const ROOT = path.resolve(FOLDER_NAME)
-
-const THEME = 'material'
+const ROOT = path.resolve(FOLDER_TEMPLATE)
 
 if (fs.existsSync(ROOT)) {
   fs.rmSync(ROOT, { recursive: true })
