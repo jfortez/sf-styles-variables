@@ -19,6 +19,12 @@ const filterByProps = [
   "border-right-color",
   "border-bottom-color",
   "border-left-color",
+  "box-shadow",
+  "border",
+  "border-left",
+  "border-right",
+  "border-top",
+  "border-bottom",
   "background",
 ];
 const templateVariableName = `sf-${THEME_NAME}-[propertyName]`;

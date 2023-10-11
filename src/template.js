@@ -8,11 +8,18 @@ const exclude = ["animation", "common", "definition", "offline-theme"];
 
 const FOLDER_NAME = "styles";
 
-const ROOT = FOLDER_NAME;
+const ROOT = path.resolve(FOLDER_NAME);
 
 const THEME = "material";
 
-fs.mkdirSync(ROOT, { recursive: true });
+if (fs.existsSync(ROOT)) {
+  fs.rmSync(ROOT, { recursive: true });
+} else {
+  fs.mkdirSync(ROOT, { recursive: true });
+}
+
+// main should be all the css folders import in order
+let mainImports = "";
 
 // node_modules/@syncfusion
 fs.readdirSync(syncfusionPath).forEach((component) => {
@@ -43,9 +50,10 @@ fs.readdirSync(syncfusionPath).forEach((component) => {
             const cssFileName = path.resolve(ROOT, COMPONENT_NAME, styleFile, `${styleFile}.css`);
             const css = `@import "${relativePath}";\n`;
 
-            if (cssFileName && css) {
-              fs.appendFileSync(cssFileName, css);
-            }
+            const importCss = `@import "./${COMPONENT_NAME}/${styleFile}/${styleFile}.css";\n`;
+            mainImports += importCss;
+
+            fs.appendFileSync(cssFileName, css);
           }
         } else {
           const file = path.resolve(ROOT, COMPONENT_NAME, `${COMPONENT_NAME}.css`);
@@ -60,6 +68,9 @@ fs.readdirSync(syncfusionPath).forEach((component) => {
             const relativePath = path.relative(folderStyle, packageStyle).replace(/\\/g, "/");
             const css = `@import "${relativePath}";\n`;
 
+            const importCss = `@import "./${COMPONENT_NAME}/${COMPONENT_NAME}.css";\n`;
+            mainImports += importCss;
+
             fs.appendFileSync(file, css);
           }
         }
@@ -67,3 +78,6 @@ fs.readdirSync(syncfusionPath).forEach((component) => {
     }
   });
 });
+
+const mainFile = path.resolve(ROOT, "main.css");
+fs.writeFileSync(mainFile, mainImports);
