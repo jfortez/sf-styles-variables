@@ -18,6 +18,7 @@ fs.mkdirSync(ROOT, { recursive: true })
 // main should be all the css folders import in order
 let mainImports = ''
 
+console.log('Generating template...')
 // node_modules/@syncfusion
 fs.readdirSync(syncfusionPath).forEach((component) => {
   const folderPath = path.resolve(syncfusionPath, component)
@@ -98,3 +99,5 @@ fs.readdirSync(syncfusionPath).forEach((component) => {
 
 const mainFile = path.resolve(ROOT, 'main.css')
 fs.writeFileSync(mainFile, mainImports)
+
+console.log('Template generated!')

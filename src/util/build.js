@@ -10,6 +10,8 @@ const postcssImport = require('postcss-import')
 
 const folderTemplate = path.resolve('styles')
 
+const output = path.resolve(OUTPUT)
+
 const filterByProps = [
   'color',
   'background-color',
@@ -18,8 +20,8 @@ const filterByProps = [
   'border-right-color',
   'border-bottom-color',
   'border-left-color',
-  // 'box-shadow',
-  // 'border',
+  'box-shadow',
+  'border',
   'border-left',
   'border-right',
   'border-top',
@@ -92,57 +94,69 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
     })
 }
 
-const output = path.resolve(OUTPUT)
+const buildFiles = async () => {
+  console.log('Building CSS files...')
 
-fs.mkdirSync(output, { recursive: true })
+  fs.mkdirSync(output, { recursive: true })
 
-// iterate over all files in the material folder
-fs.readdirSync(folderTemplate).forEach((file) => {
-  // get the file path
-  const filePath = path.resolve(folderTemplate, file)
+  fs.readdirSync(folderTemplate).forEach((file) => {
+    // get the file path
+    const filePath = path.resolve(folderTemplate, file)
 
-  if (!filePath.includes('.css')) {
-    // read all files in the folder
-    fs.readdirSync(filePath).forEach((component) => {
-      const componentPath = path.resolve(filePath, component)
-      if (!componentPath.includes('.css')) {
-        // read all files in the folder
-        fs.readdirSync(componentPath).forEach((cssFile) => {
-          const cssPath = path.resolve(componentPath, cssFile)
-          if (cssPath.includes('.css')) {
-            parseCss(cssPath, component, cssFile, file)
-          }
-        })
-      } else {
-        parseCss(componentPath, file, component)
+    if (!filePath.includes('.css')) {
+      // read all files in the folder
+      fs.readdirSync(filePath).forEach((component) => {
+        const componentPath = path.resolve(filePath, component)
+        if (!componentPath.includes('.css')) {
+          // read all files in the folder
+          fs.readdirSync(componentPath).forEach((cssFile) => {
+            const cssPath = path.resolve(componentPath, cssFile)
+            if (cssPath.includes('.css')) {
+              parseCss(cssPath, component, cssFile, file)
+            }
+          })
+        } else {
+          parseCss(componentPath, file, component)
+        }
+      })
+    } else {
+      if (filePath.includes('index.css') || filePath.includes('main.css')) {
+        fs.copyFileSync(filePath, path.resolve(OUTPUT, file))
       }
-    })
-  } else {
-    if (filePath.includes('index.css') || filePath.includes('main.css')) {
-      fs.copyFileSync(filePath, path.resolve(OUTPUT, file))
     }
-  }
-})
-
-const mainFile = path.resolve(OUTPUT, 'main.css')
-const mainCss = fs.readFileSync(mainFile, 'utf8')
-
-parseVariables(mainCss, { from: mainFile }).then((result) => {
-  const { globalCss, resultCss } = result
-  const output = path.resolve(OUTPUT, 'variables.css')
-  let imports = ''
-
-  fs.writeFileSync(output, globalCss)
-
-  imports += '@import "./variables.css";\n\n'
-
-  Object.keys(resultCss).forEach((key) => {
-    const file = path.resolve(OUTPUT, `${key}`)
-
-    imports += `@import "./${key}";\n`
-
-    fs.writeFileSync(file, resultCss[key])
   })
-  // // create main file
-  fs.writeFileSync(mainFile, imports)
-})
+}
+
+const buildVariables = async () => {
+  const mainFile = path.resolve(OUTPUT, 'main.css')
+  const mainCss = fs.readFileSync(mainFile, 'utf8')
+
+  console.log('Parsing CSS variables...')
+  parseVariables(mainCss, { from: mainFile }).then((result) => {
+    const { globalCss, resultCss } = result
+    const output = path.resolve(OUTPUT, 'variables.css')
+    let imports = ''
+
+    fs.writeFileSync(output, globalCss)
+
+    imports += '@import "./variables.css";\n\n'
+
+    Object.keys(resultCss).forEach((key) => {
+      const file = path.resolve(OUTPUT, `${key}`)
+
+      imports += `@import "./${key}";\n`
+
+      fs.writeFileSync(file, resultCss[key])
+    })
+    // create main file
+    fs.writeFileSync(mainFile, imports)
+    console.log('Building CSS files... Done!')
+  })
+}
+
+const build = async () => {
+  await buildFiles()
+  await buildVariables()
+}
+
+module.exports = build
