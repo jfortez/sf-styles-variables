@@ -12,7 +12,8 @@ const CSS_PROPERTIES = [
   'border-right',
   'border-top',
   'border-bottom',
-  'background'
+  'background',
+  'outline'
 ]
 
 const THEME = 'material'

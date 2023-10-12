@@ -4,6 +4,7 @@ const path = require('path')
 const postcss = require('postcss')
 const postcssImport = require('postcss-import')
 const { THEME } = require('./globals')
+const Color = require('color')
 
 const getNumeration = (obj, value) => {
   let num = 1
@@ -25,8 +26,44 @@ const getNumeration = (obj, value) => {
   return num
 }
 
+// const regex = /--(.*?):(.*?);/g
+// const root = []
+// let match
+// while ((match = regex.exec(cssVariables))) {
+//   const [, key, v] = match
+//   const value = v.trim()
+//   const obj = {
+//     name: key,
+//     value
+//   }
+//   root.push(obj)
+// }
+
+// function step(c, repetitions = 1) {
+//   const [r, g, b] = c.color
+//   const lum = Math.sqrt(0.241 * r + 0.691 * g + 0.068 * b)
+//   const [h, , v] = Color(c).hsv().color
+//   const h2 = Math.floor(h * repetitions)
+//   const lum2 = Math.floor(lum * repetitions)
+//   const v2 = Math.floor(v * repetitions)
+//   return [h2, lum2, v2]
+// }
+
+// root.sort((a, b) => {
+//   // const [h1, lum1, v1] = step(a.value, 0.8)
+//   // const [h2, lum2, v2] = step(b.value, 0.8)
+
+//   // return h1 - h2 || lum1 - lum2 || v1 - v2
+//   // ordenar por paleta de colores
+//   return Color(b.value).hue() - Color(a.value).hue()
+// })
+
+const sortStrategy = (a, b) => {
+  // sort strategy
+  return b.color.hue() - a.color.hue()
+}
 function transformVariables(variables) {
-  const newVariables = {}
+  const uniqueVariables = {}
   const variableMap = new Map()
   const defaultSuffix = `global-${THEME}`
 
@@ -36,21 +73,41 @@ function transformVariables(variables) {
     for (const variable in sourceVariables) {
       const value = sourceVariables[variable]
       if (!variableMap.has(value)) {
-        // const keyWord = variable
-        // .replace(`--${SUFFIX}-`, '')
-        // .replace(/[0-9]+$/, '')
-        // .replace(/-[0-9]+$/, '')
-
         const variableName = defaultSuffix
 
-        const num = getNumeration(newVariables, variableName)
+        const num = getNumeration(uniqueVariables, variableName)
 
         const newVariable = `--${variableName}-${num}`
         variableMap.set(value, newVariable)
-        newVariables[newVariable] = value
+        uniqueVariables[newVariable] = value
       }
     }
   }
+
+  const colors = []
+
+  Object.keys(uniqueVariables).forEach((key) => {
+    const value = uniqueVariables[key].trim()
+    const color = Color(value)
+    colors.push({
+      key,
+      value,
+      color
+    })
+  })
+
+  variableMap.clear()
+
+  const newVariables = colors
+    .sort(sortStrategy)
+    .reduce((acc, current, index) => {
+      // to object
+      const newKey = `--${defaultSuffix}-${index + 1}`
+      acc[newKey] = current.value
+      variableMap.set(current.value, newKey)
+
+      return acc
+    }, {})
 
   const replacedVariables = {}
   for (const sourceFile in variables) {
@@ -63,29 +120,6 @@ function transformVariables(variables) {
       replacedVariables[sourceFile][variable] = `var(${newVariable})`
     }
   }
-
-  Object.keys(newVariables)
-    .sort((a, b) => {
-      const propertyRegex = /--(.*?)(?=-\d+)/g
-      const propertyA = a.match(propertyRegex)[0].replace(/--/g, '')
-      const propertyB = b.match(propertyRegex)[0].replace(/--/g, '')
-
-      const numberRegex = a.match(/-\d+$/g)[0]
-      const numberA = parseInt(numberRegex.replace(/-/g, ''))
-      const numberB = parseInt(numberRegex.replace(/-/g, ''))
-
-      // order alphabetically by CSSProperty and sort ascending by number
-      if (propertyA < propertyB) return -1
-      if (propertyA > propertyB) return 1
-      if (numberA < numberB) return -1
-      if (numberA > numberB) return 1
-      return 0
-    })
-    .forEach((key) => {
-      const value = newVariables[key]
-      delete newVariables[key]
-      newVariables[key] = value
-    })
 
   return {
     newVariables,

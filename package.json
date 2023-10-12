@@ -64,6 +64,7 @@
     "@syncfusion/ej2-splitbuttons": "^23.1.36",
     "@syncfusion/ej2-spreadsheet": "^23.1.40",
     "@syncfusion/ej2-treegrid": "^23.1.39",
-    "@syncfusion/ej2-treemap": "^23.1.36"
+    "@syncfusion/ej2-treemap": "^23.1.36",
+    "color": "^4.2.3"
   }
 }
