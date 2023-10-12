@@ -3,6 +3,7 @@ const path = require('path')
 
 const postcss = require('postcss')
 const postcssImport = require('postcss-import')
+const { SUFFIX } = require('./globals')
 
 const getNumeration = (obj, value) => {
   let num = 1
@@ -34,7 +35,7 @@ function transformVariables(variables) {
     for (const variable in sourceVariables) {
       const value = sourceVariables[variable]
       const variableName = variable
-        .replace('--sf-material-', '')
+        .replace(`--${SUFFIX}-`, '')
         .replace(/-[0-9]+$/, '')
 
       const num = getNumeration(newVariables, variableName)

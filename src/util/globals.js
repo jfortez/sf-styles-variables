@@ -15,8 +15,12 @@ const CSS_PROPERTIES = [
   'background'
 ]
 
+const THEME = 'material'
+const SUFFIX = `sf-${THEME}`
+
 module.exports = {
-  THEME: 'material',
+  THEME,
+  SUFFIX,
   OUTPUT: 'build',
   FOLDER_TEMPLATE: 'styles',
   CSS_PROPERTIES

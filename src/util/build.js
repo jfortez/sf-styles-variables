@@ -1,7 +1,7 @@
 const postcss = require('postcss')
 const fs = require('node:fs')
 const path = require('node:path')
-const { OUTPUT, THEME, CSS_PROPERTIES } = require('./globals')
+const { OUTPUT, CSS_PROPERTIES, SUFFIX } = require('./globals')
 const parseVariables = require('./parseVariables')
 
 // PostCSS plugins
@@ -12,12 +12,10 @@ const folderTemplate = path.resolve('styles')
 
 const output = path.resolve(OUTPUT)
 
-const templateVariableName = `sf-${THEME}[propertyName]`
-
 const folderExceptions = ['icons']
 
 const pluginConfig = {
-  templateVariableName,
+  templateVariableName: `${SUFFIX}[propertyName]`,
   filterByProps: CSS_PROPERTIES
 }
 
