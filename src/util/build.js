@@ -21,6 +21,25 @@ const pluginConfig = {
   filterByProps: CSS_PROPERTIES
 }
 
+/**
+ *
+ * @param {string} cssContent
+ * @param {string[]} path
+ */
+const getCss = (cssContent, path) => {
+  // create the file
+  let css = `/* <== ${path.join('/')} ==> */\n${cssContent}`
+
+  // detect if root is undefined or :root{}
+  const regex = /:root\s*{\s*}\s*/
+  const undefinedRoot = regex.test(css)
+
+  if (undefinedRoot) {
+    css = css.replace(regex, '')
+  }
+  return css
+}
+
 const parseCss = (cssPath, file, cssFile, fileGroup) => {
   const css = fs.readFileSync(cssPath, 'utf8')
   // process the file
@@ -33,38 +52,32 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
           .use(valueExtractor(pluginConfig))
           .process(importResult.css, { from: cssPath })
           .then((variablesResult) => {
-            if (variablesResult.css) {
-              if (fileGroup) {
-                // create the folder
-                fs.mkdirSync(path.resolve(OUTPUT, fileGroup), {
-                  recursive: true
-                })
-                fs.mkdirSync(path.resolve(OUTPUT, fileGroup, file), {
-                  recursive: true
-                })
-                // create the file
-                let css = `/* <== ${fileGroup}/${file}/${cssFile} ==> */\n${variablesResult.css}`
+            if (fileGroup) {
+              // create the folder
+              fs.mkdirSync(path.resolve(OUTPUT, fileGroup), {
+                recursive: true
+              })
+              fs.mkdirSync(path.resolve(OUTPUT, fileGroup, file), {
+                recursive: true
+              })
+              // create the file
+              const route = [fileGroup, file, cssFile]
+              const css = getCss(variablesResult.css, route)
 
-                // detect if root is undefined or :root{}
-                const regex = /:root\s*{\s*}\s*/
-                const undefinedRoot = regex.test(css)
-                if (undefinedRoot) {
-                  // remove the :root{}
-                  css = css.replace(regex, '')
-                }
-                fs.writeFileSync(
-                  path.resolve(OUTPUT, fileGroup, file, cssFile),
-                  css
-                )
-              } else {
-                // create the folder
-                fs.mkdirSync(path.resolve(OUTPUT, file), {
-                  recursive: true
-                })
-                const css = `/* <== ${file}/${cssFile} ==> */\n${variablesResult.css}`
-                // create the file
-                fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
-              }
+              fs.writeFileSync(
+                path.resolve(OUTPUT, fileGroup, file, cssFile),
+                css
+              )
+            } else {
+              // create the folder
+              fs.mkdirSync(path.resolve(OUTPUT, file), {
+                recursive: true
+              })
+              const route = [file, cssFile]
+              // const css = `/* <== ${file}/${cssFile} ==> */\n${variablesResult.css}`
+              const css = getCss(variablesResult.css, route)
+              // create the file
+              fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
             }
           })
       } else {
@@ -72,7 +85,9 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
           recursive: true
         })
         // create the file
-        const css = `/* <== ${file}/${cssFile} ==> */\n${importResult.css}`
+        const route = [file, cssFile]
+        const css = getCss(importResult.css, route)
+
         fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
       }
     })
@@ -119,20 +134,15 @@ const buildVariables = async () => {
   parseVariables(mainCss, { from: mainFile }).then((result) => {
     const { globalCss, resultCss } = result
     const output = path.resolve(OUTPUT, 'variables.css')
-    let imports = ''
 
     fs.writeFileSync(output, globalCss)
 
-    imports += '@import "./variables.css";\n\n'
-
     Object.keys(resultCss).forEach((key) => {
       const file = path.resolve(OUTPUT, `${key}`)
-
-      imports += `@import "./${key}";\n`
-
       fs.writeFileSync(file, resultCss[key])
     })
-    // create main file
+    // rewrite main file
+    const imports = `@import "./variables.css";\n\n${mainCss}`
     fs.writeFileSync(mainFile, imports)
     console.log('Building CSS files... Done!')
   })

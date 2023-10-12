@@ -107,7 +107,8 @@ const parseVariables = (cssContent, processOptions) => {
         const files = messages
           .filter((i) => i.type === 'dependency')
           .map((i) => i.file)
-        const regex = /\/\*\s<==\s(.*?)\s==>[\s\S]*?:root\s*{([\s\S]*?)}/g
+
+        const regex = /\/\*\s<==\s(.+?)\s==>\s\s*\*\/\s:root\s*\{([\s\S]*?)\}/g
         const input = css.match(regex)
 
         const variables = {}
@@ -116,6 +117,7 @@ const parseVariables = (cssContent, processOptions) => {
           const [, variableName] = input[i].match(
             /\/\*\s<==\s(.*?)\s==>\s\*\//s
           )
+
           const [, rootVariables] = input[i].match(/:root\s*{([\s\S]*?)}/s)
           // eliminar comentarios
           const values = rootVariables.replace(/\/\*[\s\S]*?\*\//g, '')
