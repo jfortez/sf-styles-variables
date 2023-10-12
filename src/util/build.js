@@ -15,8 +15,9 @@ const output = path.resolve(OUTPUT)
 const folderExceptions = ['icons']
 
 const pluginConfig = {
-  templateVariableName: `${SUFFIX}[propertyName]`,
-  filterByProps: CSS_PROPERTIES
+  templateVariableName: `${SUFFIX}[number]`,
+  filterByProps: CSS_PROPERTIES,
+  onlyColor: true
 }
 
 /**
@@ -147,6 +148,11 @@ const buildVariables = async () => {
 }
 
 const build = async () => {
+  // this for reset the output folder
+  if (fs.existsSync(output)) {
+    fs.rmSync(output, { recursive: true })
+  }
+
   await buildFiles()
   await buildVariables()
 }

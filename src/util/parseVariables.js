@@ -3,7 +3,7 @@ const path = require('path')
 
 const postcss = require('postcss')
 const postcssImport = require('postcss-import')
-const { SUFFIX } = require('./globals')
+const { SUFFIX, THEME } = require('./globals')
 
 const getNumeration = (obj, value) => {
   let num = 1
@@ -28,21 +28,27 @@ const getNumeration = (obj, value) => {
 function transformVariables(variables) {
   const newVariables = {}
   const variableMap = new Map()
+  const defaultSuffix = `global-${THEME}`
 
   for (const sourceFile in variables) {
     const sourceVariables = variables[sourceFile]
 
     for (const variable in sourceVariables) {
       const value = sourceVariables[variable]
-      const variableName = variable
-        .replace(`--${SUFFIX}-`, '')
-        .replace(/-[0-9]+$/, '')
+      if (!variableMap.has(value)) {
+        const keyWord = variable
+          .replace(`--${SUFFIX}-`, '')
+          .replace(/[0-9]+$/, '')
+        // .replace(/-[0-9]+$/, '') <== this is when the variable ends like -[CssProperty]-[number]
 
-      const num = getNumeration(newVariables, variableName)
+        const variableName = defaultSuffix + (keyWord ? `-${keyWord}` : '')
 
-      const newVariable = `--${variableName}-${num}`
-      variableMap.set(value, newVariable)
-      newVariables[newVariable] = value
+        const num = getNumeration(newVariables, variableName)
+
+        const newVariable = `--${variableName}-${num}`
+        variableMap.set(value, newVariable)
+        newVariables[newVariable] = value
+      }
     }
   }
 
@@ -143,6 +149,7 @@ const parseVariables = (cssContent, processOptions) => {
 
         const { newVariables, replacedVariables } =
           transformVariables(variables)
+
         const keys = Object.keys(replacedVariables)
 
         const resultCss = {}
