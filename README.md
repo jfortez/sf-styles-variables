@@ -4,3 +4,4 @@
 - [ ] option to choose which CSS properties should go into the global variables.css file
 - [ ] option to create the type of style theme e.g. (material, bootstrap, etc)
 - [ ] option to generate individual components styles
+- [ ] sort global variables y color palette
