@@ -3,7 +3,7 @@ const path = require('path')
 
 const postcss = require('postcss')
 const postcssImport = require('postcss-import')
-const { SUFFIX, THEME } = require('./globals')
+const { THEME } = require('./globals')
 
 const getNumeration = (obj, value) => {
   let num = 1
@@ -36,12 +36,12 @@ function transformVariables(variables) {
     for (const variable in sourceVariables) {
       const value = sourceVariables[variable]
       if (!variableMap.has(value)) {
-        const keyWord = variable
-          .replace(`--${SUFFIX}-`, '')
-          .replace(/[0-9]+$/, '')
-        // .replace(/-[0-9]+$/, '') <== this is when the variable ends like -[CssProperty]-[number]
+        // const keyWord = variable
+        // .replace(`--${SUFFIX}-`, '')
+        // .replace(/[0-9]+$/, '')
+        // .replace(/-[0-9]+$/, '')
 
-        const variableName = defaultSuffix + (keyWord ? `-${keyWord}` : '')
+        const variableName = defaultSuffix
 
         const num = getNumeration(newVariables, variableName)
 

@@ -20,6 +20,12 @@ const pluginConfig = {
   onlyColor: true
 }
 
+const kebabToCamel = (str) => {
+  return str.replace(/-([a-z])/g, function (match, letter) {
+    return letter.toUpperCase()
+  })
+}
+
 /**
  *
  * @param {string} cssContent
@@ -35,6 +41,18 @@ const getCss = (cssContent, path) => {
 
   if (undefinedRoot) {
     css = css.replace(regex, '')
+  } else {
+    const [, rootVariables] = css?.match(/:root\s*{([\s\S]*?)}/s) || []
+    if (!rootVariables) return css
+    const tail = path.at(-1).replace('.css', '')
+    const keyWord = tail === 'all' ? path.join('-').replace('.css', '') : tail
+    const fileName = kebabToCamel(keyWord)
+    const newSuffix = `--${SUFFIX}-${fileName}`
+    const regex = new RegExp(`--${SUFFIX}`, 'g')
+
+    const newRootVariables = rootVariables.replace(regex, newSuffix)
+
+    css = css.replace(rootVariables, newRootVariables)
   }
   return css
 }
