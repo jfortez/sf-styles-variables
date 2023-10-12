@@ -49,11 +49,9 @@ const getCss = (cssContent, path) => {
     const fileName = kebabToCamel(keyWord)
     const newSuffix = `--${SUFFIX}-${fileName}`
     const regex = new RegExp(`--${SUFFIX}`, 'g')
-
-    const newRootVariables = rootVariables.replace(regex, newSuffix)
-
-    css = css.replace(rootVariables, newRootVariables)
+    css = css.replace(regex, newSuffix)
   }
+
   return css
 }
 
