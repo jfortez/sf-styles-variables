@@ -10,9 +10,9 @@ const main = () => {
     createTemplate()
   }
   const output = path.resolve(OUTPUT)
-  // if (!fs.existsSync(output)) {
   build()
-  // }
+  if (!fs.existsSync(output)) {
+  }
 }
 
 main()

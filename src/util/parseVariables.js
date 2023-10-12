@@ -34,7 +34,7 @@ function transformVariables(variables) {
     for (const variable in sourceVariables) {
       const value = sourceVariables[variable]
       const variableName = variable
-        .replace('--sf-material--', '')
+        .replace('--sf-material-', '')
         .replace(/-[0-9]+$/, '')
 
       const num = getNumeration(newVariables, variableName)
@@ -142,7 +142,6 @@ const parseVariables = (cssContent, processOptions) => {
 
         const { newVariables, replacedVariables } =
           transformVariables(variables)
-
         const keys = Object.keys(replacedVariables)
 
         const resultCss = {}

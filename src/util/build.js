@@ -12,7 +12,7 @@ const folderTemplate = path.resolve('styles')
 
 const output = path.resolve(OUTPUT)
 
-const templateVariableName = `sf-${THEME}-[propertyName]`
+const templateVariableName = `sf-${THEME}[propertyName]`
 
 const folderExceptions = ['icons']
 
