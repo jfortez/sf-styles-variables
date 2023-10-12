@@ -4,25 +4,44 @@ const path = require('path')
 const postcss = require('postcss')
 const postcssImport = require('postcss-import')
 
+const getNumeration = (obj, value) => {
+  let num = 1
+
+  // get last number by unique keyword
+  const store = Object.keys(obj)
+  if (store.length > 0) {
+    const current = store
+      .map((key) => key.split('--')[1])
+      .filter((i) => i.split(/-[0-9]+$/)[0] === value)
+    if (current.length > 0) {
+      const lastKey = current.at(-1).split('-').at(-1)
+      if (lastKey) {
+        num = parseInt(lastKey) + 1
+      }
+    }
+  }
+
+  return num
+}
+
 function transformVariables(variables) {
   const newVariables = {}
   const variableMap = new Map()
+
   for (const sourceFile in variables) {
     const sourceVariables = variables[sourceFile]
 
     for (const variable in sourceVariables) {
       const value = sourceVariables[variable]
+      const variableName = variable
+        .replace('--sf-material--', '')
+        .replace(/-[0-9]+$/, '')
 
-      if (!variableMap.has(value)) {
-        const variableName = variable
-          .replace('--sf-material--', '')
-          .replace(/-[0-9]+$/, '')
+      const num = getNumeration(newVariables, variableName)
 
-        // get last size by variableName
-        const newVariable = `--${variableName}-${variableMap.size + 1}`
-        variableMap.set(value, newVariable)
-        newVariables[newVariable] = value
-      }
+      const newVariable = `--${variableName}-${num}`
+      variableMap.set(value, newVariable)
+      newVariables[newVariable] = value
     }
   }
 
@@ -38,10 +57,23 @@ function transformVariables(variables) {
     }
   }
 
-  // order variables by name
-
   Object.keys(newVariables)
-    .sort()
+    .sort((a, b) => {
+      const propertyRegex = /--(.*?)(?=-\d+)/g
+      const propertyA = a.match(propertyRegex)[0].replace(/--/g, '')
+      const propertyB = b.match(propertyRegex)[0].replace(/--/g, '')
+
+      const numberRegex = a.match(/-\d+$/g)[0]
+      const numberA = parseInt(numberRegex.replace(/-/g, ''))
+      const numberB = parseInt(numberRegex.replace(/-/g, ''))
+
+      // order alphabetically by CSSProperty and sort ascending by number
+      if (propertyA < propertyB) return -1
+      if (propertyA > propertyB) return 1
+      if (numberA < numberB) return -1
+      if (numberA > numberB) return 1
+      return 0
+    })
     .forEach((key) => {
       const value = newVariables[key]
       delete newVariables[key]
@@ -88,20 +120,24 @@ const parseVariables = (cssContent, processOptions) => {
           // eliminar comentarios
           const values = rootVariables.replace(/\/\*[\s\S]*?\*\//g, '')
 
+          const regex = /--[^:\s]+:/g
+
           const inputVariables = {}
-          values.split('\n').forEach((line) => {
-            // TODO: fix bug when background property has a value with a url("..."), the result is incomplete.
-            const match = line.match(/--([\w-]+):\s*([^;]+)/)
-            console.log(line)
-            if (match) {
-              const [, name, value] = match
-              inputVariables[`--${name}`] = value.trim()
-            }
-          })
+          values
+            .trim()
+            .split('\n')
+            .forEach((line) => {
+              const [key] = line.match(regex)
+              const value = String(line)
+                .replace(regex, '')
+                .trim()
+                .replace(/;$/, '')
+
+              inputVariables[`${key.replace(/:$/, '')}`] = value
+            })
           variables[variableName] = inputVariables
         }
 
-        return
         const { newVariables, replacedVariables } =
           transformVariables(variables)
 
