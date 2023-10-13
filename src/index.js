@@ -1,8 +1,9 @@
 const fs = require('node:fs')
 const path = require('node:path')
-const { FOLDER_TEMPLATE, OUTPUT } = require('./util/globals')
-const createTemplate = require('./util/template')
-const build = require('./util/build')
+const { FOLDER_TEMPLATE, OUTPUT } = require('./lib/globals')
+const createTemplate = require('./lib/template')
+const build = require('./lib/build')
+// const orderColors = require('./lib/color')
 
 const main = () => {
   const template = path.resolve(FOLDER_TEMPLATE)
@@ -13,6 +14,7 @@ const main = () => {
   if (!fs.existsSync(output)) {
     build()
   }
+  // orderColors()
 }
 
 main()
