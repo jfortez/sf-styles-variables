@@ -26,6 +26,15 @@ const getNumeration = (obj, value) => {
   return num
 }
 
+const isColor = (str) => {
+  try {
+    Color(str)
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
 const sortStrategy = (a, b) => {
   // sort strategy
   return b.color.hue() - a.color.hue()
@@ -39,7 +48,8 @@ function transformVariables(variables) {
     const sourceVariables = variables[sourceFile]
 
     for (const variable in sourceVariables) {
-      const value = String(sourceVariables[variable]).toLowerCase()
+      const v = sourceVariables[variable]
+      const value = isColor(v) ? Color(v).rgb().string() : v
 
       if (!variableMap.get(value)) {
         const variableName = defaultSuffix
