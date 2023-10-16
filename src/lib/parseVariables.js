@@ -1,44 +1,32 @@
 const fs = require('fs')
 const path = require('path')
+const Color = require('color')
 
 const postcss = require('postcss')
 const postcssImport = require('postcss-import')
 const { THEME } = require('./globals')
-const Color = require('color')
-
-const getNumeration = (obj, value) => {
-  let num = 1
-
-  // get last number by unique keyword
-  const store = Object.keys(obj)
-  if (store.length > 0) {
-    const current = store
-      .map((key) => key.split('--')[1])
-      .filter((i) => i.split(/-[0-9]+$/)[0] === value)
-    if (current.length > 0) {
-      const lastKey = current.at(-1).split('-').at(-1)
-      if (lastKey) {
-        num = parseInt(lastKey) + 1
-      }
-    }
-  }
-
-  return num
-}
-
-const isColor = (str) => {
-  try {
-    Color(str)
-    return true
-  } catch (error) {
-    return false
-  }
-}
+const { isColor, order, lookUp } = require('./colorUtil')
 
 const sortStrategy = (a, b) => {
-  // sort strategy
-  return b.color.hue() - a.color.hue()
+  if (THEME === 'material') {
+    const { index: indexA, scheme: schemeA } = a
+    const { index: indexB, scheme: schemeB } = b
+
+    if (schemeA < schemeB) return -1
+    if (schemeA > schemeB) return 1
+
+    if (indexA < indexB) return -1
+    if (indexA > indexB) return 1
+  } else {
+    return b.color.hue() - a.color.hue()
+  }
 }
+
+const getValue = (str) => {
+  const value = isColor(str) ? Color(str).rgb().string() : str
+  return value
+}
+
 function transformVariables(variables) {
   const uniqueVariables = {}
   const variableMap = new Map()
@@ -48,15 +36,12 @@ function transformVariables(variables) {
     const sourceVariables = variables[sourceFile]
 
     for (const variable in sourceVariables) {
-      const v = sourceVariables[variable]
-      const value = isColor(v) ? Color(v).rgb().string() : v
+      const value = getValue(sourceVariables[variable])
 
       if (!variableMap.get(value)) {
-        const variableName = defaultSuffix
+        const number = variableMap.size + 1
 
-        const num = getNumeration(uniqueVariables, variableName)
-
-        const newVariable = `--${variableName}-${num}`
+        const newVariable = `var-${number}`
         variableMap.set(value, newVariable)
         uniqueVariables[newVariable] = value
       }
@@ -68,9 +53,28 @@ function transformVariables(variables) {
   Object.keys(uniqueVariables).forEach((key) => {
     const value = uniqueVariables[key].trim()
     const color = Color(value)
+    let scheme
+    let index
+    if (THEME === 'material') {
+      const v = color.rgb().string()
+      const schemes = Object.keys(order)
+      for (let i = 0; i < schemes.length; i++) {
+        const key = schemes[i]
+        const c = order[key]
+
+        if (c.includes(v)) {
+          scheme = key
+          index = c.indexOf(v)
+          break
+        }
+      }
+    }
+
     colors.push({
       key,
       value,
+      scheme,
+      index,
       color
     })
   })
@@ -82,19 +86,30 @@ function transformVariables(variables) {
     .reduce((acc, current, index) => {
       // to object
       const newKey = `--${defaultSuffix}-${index + 1}`
-      acc[newKey] = current.value
+      const scheme = lookUp[current.scheme]
+
+      if (THEME === 'material') {
+        if (!acc[scheme]) {
+          acc[scheme] = {}
+        }
+        acc[scheme][newKey] = current.value
+      } else {
+        acc[newKey] = current.value
+      }
+      // acc[newKey] = current.value
       variableMap.set(current.value, newKey)
 
       return acc
     }, {})
 
   const replacedVariables = {}
+
   for (const sourceFile in variables) {
     const sourceVariables = variables[sourceFile]
     replacedVariables[sourceFile] = {}
 
     for (const variable in sourceVariables) {
-      const value = sourceVariables[variable]
+      const value = getValue(sourceVariables[variable])
       const newVariable = variableMap.get(value)
       replacedVariables[sourceFile][variable] = `var(${newVariable})`
     }
@@ -105,10 +120,19 @@ function transformVariables(variables) {
     replacedVariables
   }
 }
-function toRootVariables(obj) {
-  return Object.entries(obj)
-    .map(([variable, value]) => `  ${variable}: ${value};`)
-    .join('\n')
+
+const getLine = (key, value) => `  ${key}: ${value};`
+
+function toRootVariables(obj, setComments) {
+  const fn = ([variable, value]) => {
+    if (setComments) {
+      const v = `  /* ${variable} */\n${toRootVariables(value)}`
+      return v
+    }
+    return getLine(variable, value)
+  }
+
+  return Object.entries(obj).map(fn).join('\n')
 }
 
 /**
@@ -188,7 +212,10 @@ const parseVariables = (cssContent, processOptions) => {
           }
         }
 
-        const globalToRootVariables = toRootVariables(newVariables)
+        const globalToRootVariables = toRootVariables(
+          newVariables,
+          THEME === 'material'
+        )
 
         const globalCss = `:root {\n${globalToRootVariables}\n}`
 
