@@ -89,6 +89,7 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
                 recursive: true
               })
               const route = [file, cssFile]
+
               // const css = `/* <== ${file}/${cssFile} ==> */\n${variablesResult.css}`
               const css = getCss(variablesResult.css, route)
               // create the file
@@ -101,6 +102,7 @@ const parseCss = (cssPath, file, cssFile, fileGroup) => {
         })
         // create the file
         const route = [file, cssFile]
+
         const css = getCss(importResult.css, route)
 
         fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
