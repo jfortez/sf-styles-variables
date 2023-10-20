@@ -6,10 +6,12 @@ const build = require('./lib/build')
 
 const main = () => {
   const template = path.resolve(FOLDER_TEMPLATE)
+  const output = path.resolve(OUTPUT)
+
   if (!fs.existsSync(template)) {
     createTemplate()
   }
-  const output = path.resolve(OUTPUT)
+
   if (!fs.existsSync(output)) {
     build({ onlyGlobalFolder: true, includeGlobalVariables: true })
   }
