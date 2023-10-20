@@ -154,7 +154,6 @@ const parseVariables = (cssContent, processOptions) => {
 
         const regex = /\/\*\s<==\s(.+?)\s==>\s\s*\*\/\s:root\s*\{([\s\S]*?)\}/g
         const input = css.match(regex)
-
         const variables = {}
 
         for (let i = 0; i < input.length; i++) {

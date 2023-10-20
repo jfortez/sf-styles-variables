@@ -1,5 +1,5 @@
 const postcss = require('postcss')
-const fs = require('node:fs')
+const fs = require('node:fs/promises')
 const path = require('node:path')
 const { OUTPUT, CSS_PROPERTIES, SUFFIX } = require('./globals')
 const parseVariables = require('./parseVariables')
@@ -12,8 +12,6 @@ const folderTemplate = path.resolve('styles')
 
 const output = path.resolve(OUTPUT)
 
-const folderExceptions = ['icons']
-
 const pluginConfig = {
   templateVariableName: `${SUFFIX}[number]`,
   filterByProps: CSS_PROPERTIES,
@@ -24,6 +22,15 @@ const kebabToCamel = (str) => {
   return str.replace(/-([a-z])/g, function (match, letter) {
     return letter.toUpperCase()
   })
+}
+
+const exist = async (path) => {
+  try {
+    await fs.access(path)
+    return true
+  } catch (error) {
+    return false
+  }
 }
 
 /**
@@ -55,124 +62,130 @@ const getCss = (cssContent, path) => {
   return css
 }
 
-const parseCss = (cssPath, file, cssFile, fileGroup) => {
-  const css = fs.readFileSync(cssPath, 'utf8')
-  // process the file
-  postcss()
-    .use(postcssImport())
-    .process(css, { from: cssPath })
-    .then((importResult) => {
-      if (!folderExceptions.includes(file)) {
-        postcss()
-          .use(valueExtractor(pluginConfig))
-          .process(importResult.css, { from: cssPath })
-          .then((variablesResult) => {
-            if (fileGroup) {
-              // create the folder
-              fs.mkdirSync(path.resolve(OUTPUT, fileGroup), {
-                recursive: true
-              })
-              fs.mkdirSync(path.resolve(OUTPUT, fileGroup, file), {
-                recursive: true
-              })
-              // create the file
-              const route = [fileGroup, file, cssFile]
-              const css = getCss(variablesResult.css, route)
-
-              fs.writeFileSync(
-                path.resolve(OUTPUT, fileGroup, file, cssFile),
-                css
-              )
-            } else {
-              // create the folder
-              fs.mkdirSync(path.resolve(OUTPUT, file), {
-                recursive: true
-              })
-              const route = [file, cssFile]
-
-              // const css = `/* <== ${file}/${cssFile} ==> */\n${variablesResult.css}`
-              const css = getCss(variablesResult.css, route)
-              // create the file
-              fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
-            }
-          })
-      } else {
-        fs.mkdirSync(path.resolve(OUTPUT, file), {
-          recursive: true
+const parseCss = (cssPath) => {
+  return new Promise((resolve) => {
+    fs.readFile(cssPath, 'utf8').then((css) => {
+      // process the file
+      postcss()
+        .use(postcssImport())
+        .process(css, { from: cssPath })
+        .then((importResult) => {
+          postcss()
+            .use(valueExtractor(pluginConfig))
+            .process(importResult.css, { from: cssPath })
+            .then((variablesResult) => {
+              resolve(variablesResult)
+            })
         })
-        // create the file
-        const route = [file, cssFile]
-
-        const css = getCss(importResult.css, route)
-
-        fs.writeFileSync(path.resolve(OUTPUT, file, cssFile), css)
-      }
     })
+  })
 }
 
-const buildFiles = async () => {
+const buildFiles = async ({ onlyGlobalFolder }) => {
   console.log('Building CSS files...')
 
-  fs.mkdirSync(output, { recursive: true })
+  let mainImports = ''
 
-  fs.readdirSync(folderTemplate).forEach((file) => {
-    // get the file path
-    const filePath = path.resolve(folderTemplate, file)
+  await fs.mkdir(output, { recursive: true })
 
-    if (!filePath.includes('.css')) {
-      // read all files in the folder
-      fs.readdirSync(filePath).forEach((component) => {
-        const componentPath = path.resolve(filePath, component)
-        if (!componentPath.includes('.css')) {
-          // read all files in the folder
-          fs.readdirSync(componentPath).forEach((cssFile) => {
-            const cssPath = path.resolve(componentPath, cssFile)
-            if (cssPath.includes('.css')) {
-              parseCss(cssPath, component, cssFile, file)
+  const folders = await fs.readdir(folderTemplate)
+
+  await Promise.all(
+    folders.map(async (file) => {
+      const filePath = path.resolve(folderTemplate, file)
+
+      if (!filePath.includes('.css')) {
+        const componentFolders = await fs.readdir(filePath)
+
+        await Promise.all(
+          componentFolders.map(async (component) => {
+            const componentPath = path.resolve(filePath, component)
+            await fs.mkdir(path.resolve(OUTPUT, file), {
+              recursive: true
+            })
+
+            if (!componentPath.includes('.css')) {
+              if (!onlyGlobalFolder) {
+                const styles = await fs.readdir(componentPath)
+                await Promise.all(
+                  styles.map(async (cssFile) => {
+                    const cssPath = path.resolve(componentPath, cssFile)
+                    if (cssPath.includes('.css')) {
+                      const result = await parseCss(cssPath)
+                      await fs.mkdir(path.resolve(OUTPUT, file, component), {
+                        recursive: true
+                      })
+                      const route = [file, component, cssFile]
+                      const css = getCss(result, route)
+                      await fs.writeFile(
+                        path.resolve(OUTPUT, file, component, cssFile),
+                        css
+                      )
+                    }
+                  })
+                )
+              }
+            } else {
+              const result = await parseCss(componentPath)
+              const route = [file, component]
+              const css = getCss(result, route)
+              if (onlyGlobalFolder) {
+                mainImports += `@import "./${file}/${component}";\n`
+              }
+              await fs.writeFile(path.resolve(OUTPUT, file, component), css)
             }
           })
-        } else {
-          parseCss(componentPath, file, component)
+        )
+      } else {
+        if (
+          (filePath.includes('index.css') || filePath.includes('main.css')) &&
+          !onlyGlobalFolder
+        ) {
+          await fs.copyFile(filePath, path.resolve(OUTPUT, file))
         }
-      })
-    } else {
-      if (filePath.includes('index.css') || filePath.includes('main.css')) {
-        fs.copyFileSync(filePath, path.resolve(OUTPUT, file))
       }
-    }
-  })
+    })
+  )
+
+  if (onlyGlobalFolder) {
+    await fs.writeFile(path.resolve(output, 'main.css'), mainImports)
+  }
 }
 
 const buildVariables = async () => {
   const mainFile = path.resolve(OUTPUT, 'main.css')
-  const mainCss = fs.readFileSync(mainFile, 'utf8')
+  const mainCss = await fs.readFile(mainFile, 'utf8')
 
   console.log('Parsing CSS variables...')
-  parseVariables(mainCss, { from: mainFile }).then((result) => {
-    const { globalCss, resultCss } = result
-    const output = path.resolve(OUTPUT, 'variables.css')
-
-    fs.writeFileSync(output, globalCss)
-
-    Object.keys(resultCss).forEach((key) => {
-      const file = path.resolve(OUTPUT, `${key}`)
-      fs.writeFileSync(file, resultCss[key])
-    })
-    // rewrite main file
-    const imports = `@import "./variables.css";\n\n${mainCss}`
-    fs.writeFileSync(mainFile, imports)
-    console.log('Building CSS files... Done!')
+  const { globalCss, resultCss } = await parseVariables(mainCss, {
+    from: mainFile
   })
+
+  const output = path.resolve(OUTPUT, 'variables.css')
+
+  await fs.writeFile(output, globalCss)
+
+  Object.keys(resultCss).forEach(async (key) => {
+    const file = path.resolve(OUTPUT, `${key}`)
+    await fs.writeFile(file, resultCss[key])
+  })
+  // rewrite main file
+  const imports = `@import "./variables.css";\n\n${mainCss}`
+  await fs.writeFile(mainFile, imports)
+  console.log('Building CSS files... Done!')
 }
 
-const build = async () => {
-  // this for reset the output folder
-  if (fs.existsSync(output)) {
-    fs.rmSync(output, { recursive: true })
+const build = async ({ onlyGlobalFolder, includeGlobalVariables }) => {
+  if (await exist(output)) {
+    await fs.rmdir(output, { recursive: true })
   }
 
-  await buildFiles()
-  await buildVariables()
+  await buildFiles({ onlyGlobalFolder })
+
+  if (includeGlobalVariables) {
+    await buildVariables()
+  }
+  console.log('done')
 }
 
 module.exports = build

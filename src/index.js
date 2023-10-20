@@ -11,7 +11,7 @@ const main = () => {
   }
   const output = path.resolve(OUTPUT)
   if (!fs.existsSync(output)) {
-    build()
+    build({ onlyGlobalFolder: true, includeGlobalVariables: true })
   }
 }
 
