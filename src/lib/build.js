@@ -155,7 +155,6 @@ const buildFiles = async ({ onlyGlobalFolder }) => {
 const buildVariables = async () => {
   const mainFile = path.resolve(OUTPUT, 'main.css')
   const mainCss = await fs.readFile(mainFile, 'utf8')
-
   console.log('Parsing CSS variables...')
   const { globalCss, resultCss } = await parseVariables(mainCss, {
     from: mainFile
@@ -175,7 +174,10 @@ const buildVariables = async () => {
   console.log('Building CSS files... Done!')
 }
 
-const build = async ({ onlyGlobalFolder, includeGlobalVariables }) => {
+const build = async ({
+  onlyGlobalFolder,
+  includeGlobalVariables = true
+} = {}) => {
   if (await exist(output)) {
     await fs.rmdir(output, { recursive: true })
   }
@@ -185,7 +187,6 @@ const build = async ({ onlyGlobalFolder, includeGlobalVariables }) => {
   if (includeGlobalVariables) {
     await buildVariables()
   }
-  console.log('done')
 }
 
 module.exports = build

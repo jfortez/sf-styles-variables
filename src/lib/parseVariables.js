@@ -4,7 +4,7 @@ const Color = require('color')
 
 const postcss = require('postcss')
 const postcssImport = require('postcss-import')
-const { THEME } = require('./globals')
+const { THEME, OUTPUT } = require('./globals')
 const { isColor, order, lookUp } = require('./colorUtil')
 
 const sortStrategy = (a, b) => {
@@ -147,15 +147,11 @@ const parseVariables = (cssContent, processOptions) => {
       .use(postcssImport())
       .process(cssContent, processOptions)
       .then((result) => {
-        const { css, messages } = result
-        const files = messages
-          .filter((i) => i.type === 'dependency')
-          .map((i) => i.file)
+        const { css } = result
 
         const regex = /\/\*\s<==\s(.+?)\s==>\s\s*\*\/\s:root\s*\{([\s\S]*?)\}/g
         const input = css.match(regex)
         const variables = {}
-
         for (let i = 0; i < input.length; i++) {
           const [, variableName] = input[i].match(
             /\/\*\s<==\s(.*?)\s==>\s\*\//s
@@ -192,28 +188,21 @@ const parseVariables = (cssContent, processOptions) => {
 
         for (let i = 0; i < keys.length; i++) {
           const key = keys[i]
-          const file = files.find((file) => {
-            const name = path.basename(file)
-            const target = key.split('/').at(-1)
-            return name === target
-          })
 
           const variablesToReplace = replacedVariables[key]
-          if (file) {
-            const filePath = path.resolve(file)
-            const css = fs.readFileSync(filePath, 'utf8')
+          const filePath = path.resolve(OUTPUT, key)
+          const css = fs.readFileSync(filePath, 'utf8')
 
-            const rootVariableContent = toRootVariables(variablesToReplace)
+          const rootVariableContent = toRootVariables(variablesToReplace)
 
-            const regex = /:root\s*{([\s\S]*?)}/g
-            let newCss = css
+          const regex = /:root\s*{([\s\S]*?)}/g
+          let newCss = css
 
-            if (Object.keys(variablesToReplace).length > 0) {
-              newCss = css.replace(regex, `:root {\n${rootVariableContent}\n}`)
-            }
-
-            resultCss[key] = newCss
+          if (Object.keys(variablesToReplace).length > 0) {
+            newCss = css.replace(regex, `:root {\n${rootVariableContent}\n}`)
           }
+
+          resultCss[key] = newCss
         }
 
         const globalToRootVariables = toRootVariables(
