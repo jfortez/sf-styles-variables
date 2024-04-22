@@ -10,13 +10,8 @@ const exclude = ['animation', 'common', 'definition', 'offline-theme']
 
 const ROOT = path.resolve(FOLDER_TEMPLATE)
 
-const createTemplate = () => {
-  console.log('Generating template...')
-
-  if (fs.existsSync(ROOT)) {
-    fs.rmSync(ROOT, { recursive: true })
-  }
-  fs.mkdirSync(ROOT, { recursive: true })
+const getPaths = () => {
+  const styles = {}
 
   // main should be all the css folders import in order
   let mainImports = ''
@@ -30,10 +25,9 @@ const createTemplate = () => {
         // node_modules/@syncfusion/ej2-[component]/styles
         const styleFolderPath = path.resolve(folderPath, file)
         const [, COMPONENT_NAME] = folderPath.split('ej2-') || []
+        styles[COMPONENT_NAME] = {}
 
         const componentFolder = path.resolve(ROOT, COMPONENT_NAME)
-
-        fs.mkdirSync(componentFolder, { recursive: true })
 
         if (COMPONENT_NAME === 'base' || COMPONENT_NAME === 'icons') {
           const file = path.resolve(
@@ -51,13 +45,14 @@ const createTemplate = () => {
             const relativePath = path
               .relative(folderStyle, packageStyle)
               .replace(/\\/g, '/')
+
             const css = `@import "${relativePath}";\n`
+            styles[COMPONENT_NAME][`${COMPONENT_NAME}.css`] = css
+
             // const css = `/* <== ${COMPONENT_NAME}/${COMPONENT_NAME}.css ==> */\n@import "${relativePath}";\n`
 
             const importCss = `@import "./${COMPONENT_NAME}/${COMPONENT_NAME}.css";\n`
             mainImports += importCss
-
-            fs.appendFileSync(file, css)
           }
         } else {
           const allCss = path.resolve(styleFolderPath, `${THEME}.css`)
@@ -66,9 +61,9 @@ const createTemplate = () => {
               .relative(componentFolder, allCss)
               .replace(/\\/g, '/')
             const css = `@import "${relativeImport}";\n`
-            const all = path.resolve(componentFolder, 'all.css')
+            // const all = path.resolve(componentFolder, 'all.css')
 
-            fs.appendFileSync(all, css)
+            styles[COMPONENT_NAME]['all.css'] = css
           }
 
           fs.readdirSync(styleFolderPath).forEach((styleFile) => {
@@ -76,7 +71,7 @@ const createTemplate = () => {
             const isFolder = !styleFile.match(/\.[a-z]+$/i)
             if (isFolder && !exclude.includes(styleFile)) {
               const folderStyle = path.resolve(componentFolder, styleFile)
-              fs.mkdirSync(folderStyle, { recursive: true })
+
               const packageStyle = path.resolve(
                 styleFolderPath,
                 styleFile,
@@ -85,17 +80,13 @@ const createTemplate = () => {
               const relativePath = path
                 .relative(folderStyle, packageStyle)
                 .replace(/\\/g, '/')
-              const cssFileName = path.resolve(
-                ROOT,
-                COMPONENT_NAME,
-                styleFile,
-                `${styleFile}.css`
-              )
+
               const css = `@import "${relativePath}";\n`
+              styles[COMPONENT_NAME][styleFile] = css
+
               // const css = `/* <== ${COMPONENT_NAME}/${styleFile}/${styleFile}.css ==> */\n@import "${relativePath}";\n`
               const importCss = `@import "./${COMPONENT_NAME}/${styleFile}/${styleFile}.css";\n`
               mainImports += importCss
-              fs.appendFileSync(cssFileName, css)
             }
           })
         }
@@ -103,10 +94,9 @@ const createTemplate = () => {
     })
   })
 
-  const mainFile = path.resolve(ROOT, 'main.css')
-  fs.writeFileSync(mainFile, mainImports)
+  styles['main.css'] = mainImports
 
-  console.log('Template generated!')
+  return styles
 }
 
-module.exports = createTemplate
+module.exports = getPaths
