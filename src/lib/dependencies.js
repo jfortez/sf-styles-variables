@@ -1,3 +1,5 @@
+const ora = require('ora')
+
 const exec = require('util').promisify(require('child_process').exec)
 
 const dependencies = [
@@ -31,18 +33,20 @@ const dependencies = [
   '@syncfusion/ej2-lists',
   '@syncfusion/ej2-notifications',
   '@syncfusion/ej2-progressbar',
-  '@syncfusion/ej2-querybuilder'
+  '@syncfusion/ej2-querybuilder',
+  '@syncfusion/ej2-react-ribbon'
 ]
 
-export const installDeps = () => {
+const installDeps = async () => {
   let str = 'npm i'
   for (const dependency of dependencies) {
-    str += ` ${dependency}`
+    str += ` ${dependency}@latest`
   }
-  console.log(str)
-  exec(str).then((response) => {
-    console.log(response)
-  })
+
+  const spinner = ora('Installing/Updating Dependencies').start()
+  const { stdout } = await exec(str)
+  console.log(stdout)
+  spinner.stop()
 }
 
-module.exports = dependencies
+installDeps()
