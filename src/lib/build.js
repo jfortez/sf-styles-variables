@@ -1,5 +1,6 @@
 const postcss = require('postcss')
 const fs = require('node:fs/promises')
+const ora = require('ora')
 const path = require('node:path')
 const { OUTPUT, CSS_PROPERTIES, SUFFIX } = require('./globals')
 const parseVariables = require('./parseVariables')
@@ -62,27 +63,8 @@ const getCss = (cssContent, path) => {
   return css
 }
 
-const parseCss = (cssPath) => {
-  return new Promise((resolve) => {
-    fs.readFile(cssPath, 'utf8').then((css) => {
-      // process the file
-      postcss()
-        .use(postcssImport())
-        .process(css, { from: cssPath })
-        .then((importResult) => {
-          postcss()
-            .use(valueExtractor(pluginConfig))
-            .process(importResult.css, { from: cssPath })
-            .then((variablesResult) => {
-              resolve(variablesResult)
-            })
-        })
-    })
-  })
-}
-
 const buildFiles = async ({ onlyGlobalFolder, paths }) => {
-  console.log('Building CSS files...')
+  const spinner = ora('Building CSS Files').start()
 
   let mainImports = ''
 
@@ -97,89 +79,44 @@ const buildFiles = async ({ onlyGlobalFolder, paths }) => {
         await fs.mkdir(path.resolve(OUTPUT, folder), {
           recursive: true
         })
-        const subFolders = Object.keys(folderContent)
+        const allFiles = ['all', 'icons', 'base']
+        const subFolders = Object.keys(folderContent).filter((subFolder) => {
+          return onlyGlobalFolder
+            ? allFiles.includes(subFolder)
+            : subFolder !== 'all'
+        })
+
         await Promise.all(
           subFolders.map(async (subFolder) => {
             const subFolderContent = folderContent[subFolder]
-            if (onlyGlobalFolder && subFolder.includes('.css')) {
-              postcss()
-                .use(postcssImport())
-                .process(`'${subFolderContent.trim()}'`)
-                .then((importResult) => {
-                  console.log(importResult)
-                })
-            }
+
+            const from = `${folder}/${subFolder}`
+            const { css: importCss } = await postcss()
+              .use(postcssImport())
+              .process(subFolderContent, { from })
+            const { css: result } = await postcss()
+              .use(valueExtractor(pluginConfig))
+              .process(importCss, { from })
+            const cssFile = `${subFolder}.css`
+            const route = [folder, cssFile]
+            const css = getCss(result, route)
+            await fs.writeFile(path.resolve(OUTPUT, folder, cssFile), css)
+            mainImports += `@import './${from}.css';\n`
           })
         )
       }
-      // const old = false
-      // if (old) {
-      //   if (!filePath.includes('.css')) {
-      //     const componentFolders = await fs.readdir(filePath)
-
-      //     await Promise.all(
-      //       componentFolders.map(async (component) => {
-      //         const componentPath = path.resolve(filePath, component)
-      //         await fs.mkdir(path.resolve(OUTPUT, folder), {
-      //           recursive: true
-      //         })
-
-      //         if (!componentPath.includes('.css')) {
-      //           if (!onlyGlobalFolder) {
-      //             const styles = await fs.readdir(componentPath)
-      //             await Promise.all(
-      //               styles.map(async (cssFile) => {
-      //                 const cssPath = path.resolve(componentPath, cssFile)
-      //                 if (cssPath.includes('.css')) {
-      //                   const result = await parseCss(cssPath)
-      //                   await fs.mkdir(
-      //                     path.resolve(OUTPUT, folder, component),
-      //                     {
-      //                       recursive: true
-      //                     }
-      //                   )
-      //                   const route = [folder, component, cssFile]
-      //                   const css = getCss(result, route)
-      //                   await fs.writeFile(
-      //                     path.resolve(OUTPUT, folder, component, cssFile),
-      //                     css
-      //                   )
-      //                 }
-      //               })
-      //             )
-      //           }
-      //         } else {
-      //           const result = await parseCss(componentPath)
-      //           const route = [folder, component]
-      //           const css = getCss(result, route)
-      //           if (onlyGlobalFolder) {
-      //             mainImports += `@import "./${folder}/${component}";\n`
-      //           }
-      //           await fs.writeFile(path.resolve(OUTPUT, folder, component), css)
-      //         }
-      //       })
-      //     )
-      //   } else {
-      //     if (
-      //       (filePath.includes('index.css') || filePath.includes('main.css')) &&
-      //       !onlyGlobalFolder
-      //     ) {
-      //       await fs.copyFile(filePath, path.resolve(OUTPUT, folder))
-      //     }
-      //   }
-      // }
     })
   )
+  await fs.writeFile(path.resolve(output, 'main.css'), mainImports)
 
-  // if (onlyGlobalFolder) {
-  //   await fs.writeFile(path.resolve(output, 'main.css'), mainImports)
-  // }
+  spinner.stop()
 }
 
 const buildVariables = async () => {
   const mainFile = path.resolve(OUTPUT, 'main.css')
   const mainCss = await fs.readFile(mainFile, 'utf8')
-  console.log('Parsing CSS variables...')
+  const spinner = ora('Parsing CSS Variables').start()
+
   const { globalCss, resultCss } = await parseVariables(mainCss, {
     from: mainFile
   })
@@ -195,7 +132,7 @@ const buildVariables = async () => {
   // rewrite main file
   const imports = `@import "./variables.css";\n\n${mainCss}`
   await fs.writeFile(mainFile, imports)
-  console.log('Building CSS files... Done!')
+  spinner.stop()
 }
 
 const build = async ({
@@ -209,9 +146,9 @@ const build = async ({
 
   await buildFiles({ onlyGlobalFolder, paths })
 
-  // if (includeGlobalVariables) {
-  //   await buildVariables()
-  // }
+  if (includeGlobalVariables) {
+    await buildVariables()
+  }
 }
 
 module.exports = build

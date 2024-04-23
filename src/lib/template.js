@@ -1,6 +1,7 @@
 const fs = require('node:fs')
 
 const path = require('node:path')
+const ora = require('ora')
 
 const { FOLDER_TEMPLATE, THEME } = require('./globals')
 
@@ -10,11 +11,14 @@ const exclude = ['animation', 'common', 'definition', 'offline-theme']
 
 const ROOT = path.resolve(FOLDER_TEMPLATE)
 
+const getStylePkg = (path) =>
+  path.split('node_modules\\').at(-1).replace(/\\/g, '/')
+
 const getPaths = () => {
+  const spinner = ora('Generating Files from @syncfusion MATERIAL').start()
   const styles = {}
 
   // main should be all the css folders import in order
-  let mainImports = ''
 
   // node_modules/@syncfusion
   fs.readdirSync(syncfusionPath).forEach((component) => {
@@ -27,8 +31,6 @@ const getPaths = () => {
         const [, COMPONENT_NAME] = folderPath.split('ej2-') || []
         styles[COMPONENT_NAME] = {}
 
-        const componentFolder = path.resolve(ROOT, COMPONENT_NAME)
-
         if (COMPONENT_NAME === 'base' || COMPONENT_NAME === 'icons') {
           const file = path.resolve(
             ROOT,
@@ -40,53 +42,32 @@ const getPaths = () => {
 
           if (shouldAppend) {
             const packageStyle = path.resolve(styleFolderPath, `${THEME}.css`)
-            const folderStyle = path.resolve(ROOT, COMPONENT_NAME)
 
-            const relativePath = path
-              .relative(folderStyle, packageStyle)
-              .replace(/\\/g, '/')
+            const css = `@import "${getStylePkg(packageStyle)}";\n`
 
-            const css = `@import "${relativePath}";\n`
-            styles[COMPONENT_NAME][`${COMPONENT_NAME}.css`] = css
-
-            // const css = `/* <== ${COMPONENT_NAME}/${COMPONENT_NAME}.css ==> */\n@import "${relativePath}";\n`
-
-            const importCss = `@import "./${COMPONENT_NAME}/${COMPONENT_NAME}.css";\n`
-            mainImports += importCss
+            styles[COMPONENT_NAME][COMPONENT_NAME] = css
           }
         } else {
           const allCss = path.resolve(styleFolderPath, `${THEME}.css`)
-          if (fs.existsSync(allCss)) {
-            const relativeImport = path
-              .relative(componentFolder, allCss)
-              .replace(/\\/g, '/')
-            const css = `@import "${relativeImport}";\n`
-            // const all = path.resolve(componentFolder, 'all.css')
 
-            styles[COMPONENT_NAME]['all.css'] = css
+          if (fs.existsSync(allCss)) {
+            const css = `@import "${getStylePkg(allCss)}";\n`
+
+            styles[COMPONENT_NAME].all = css
           }
 
           fs.readdirSync(styleFolderPath).forEach((styleFile) => {
             // node_modules/@syncfusion/ej2-[component]/styles/[styleFile | styleFolder]
             const isFolder = !styleFile.match(/\.[a-z]+$/i)
             if (isFolder && !exclude.includes(styleFile)) {
-              const folderStyle = path.resolve(componentFolder, styleFile)
-
               const packageStyle = path.resolve(
                 styleFolderPath,
                 styleFile,
                 `${THEME}.css`
               )
-              const relativePath = path
-                .relative(folderStyle, packageStyle)
-                .replace(/\\/g, '/')
 
-              const css = `@import "${relativePath}";\n`
+              const css = `@import "${getStylePkg(packageStyle)}";\n`
               styles[COMPONENT_NAME][styleFile] = css
-
-              // const css = `/* <== ${COMPONENT_NAME}/${styleFile}/${styleFile}.css ==> */\n@import "${relativePath}";\n`
-              const importCss = `@import "./${COMPONENT_NAME}/${styleFile}/${styleFile}.css";\n`
-              mainImports += importCss
             }
           })
         }
@@ -94,8 +75,7 @@ const getPaths = () => {
     })
   })
 
-  styles['main.css'] = mainImports
-
+  spinner.stop()
   return styles
 }
 
